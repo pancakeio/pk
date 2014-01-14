@@ -4,7 +4,6 @@ import (
   "bytes"
   "crypto/md5"
   "errors"
-  "flag"
   "fmt"
   "io/ioutil"
   "os"
@@ -15,7 +14,7 @@ import (
   "code.google.com/p/go.crypto/ssh"
 )
 
-var sshPubKeyPath = flag.String("--key-path", "", "path to an ssh-key to upload")
+var sshPubKeyPath string
 
 func upload(k ssh.PublicKey) {
   keyStr := string(ssh.MarshalAuthorizedKey(k))
@@ -29,8 +28,8 @@ func fingerprint(k ssh.PublicKey) []byte {
 }
 
 func findSSHKeys() ([]byte, error) {
-  if *sshPubKeyPath != "" {
-    return sshReadPubKey(*sshPubKeyPath)
+  if sshPubKeyPath != "" {
+    return sshReadPubKey(sshPubKeyPath)
   }
 
   candidateKeys := make(map[string]string)

@@ -1,6 +1,7 @@
 package main
 
 import (
+  "flag"
   "fmt"
   "strings"
 
@@ -19,8 +20,12 @@ var cmdKeyAdd = &cmd{
     keyStr := string(ssh.MarshalAuthorizedKey(key))
     err := client.UploadKey("myfirstkey", strings.TrimSpace(keyStr))
     return err
-
   },
+  flags: flag.NewFlagSet("add-key", flag.ExitOnError),
+}
+
+func init() {
+  cmdKeyAdd.flags.StringVar(&sshPubKeyPath, "key-path", "", "path to an ssh-key to upload")
 }
 
 var cmdKeysList = &cmd{

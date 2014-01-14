@@ -54,7 +54,7 @@ func main() {
 
   // save access token
   if flag.NArg() == 0 {
-    flag.PrintDefaults()
+    flag.Usage()
     return
   }
 
