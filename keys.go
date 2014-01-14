@@ -72,14 +72,12 @@ func findSSHKeys() ([]byte, error) {
     i += 1
   }
 
-  choice := -1
-  fmt.Printf("Pick a key to use [1-%d]: ", numCandidateKeys)
-  fmt.Scanf("%d", &choice)
-  if choice < 1 || choice > numCandidateKeys {
-    return nil, errors.New("wat")
+  choice, err := pick("key", numCandidateKeys)
+  if err != nil {
+    return nil, err
   }
 
-  return ssh.MarshalAuthorizedKey(keyLst[choice-1]), nil
+  return ssh.MarshalAuthorizedKey(keyLst[choice]), nil
 }
 
 func sshReadPubKey(s string) ([]byte, error) {

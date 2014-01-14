@@ -11,8 +11,16 @@ type CreateProjectResponse struct {
   Name string `json:"name"`
 }
 
-func (pk *PKClient) CreateProject() (*CreateProjectResponse, error) {
-  resp, err := pk.postForm("projects", url.Values{})
+type ProjectKind string
+
+const (
+  STATIC_PROJECT  ProjectKind = "static"
+  DEFAULT_PROJECT ProjectKind = "default"
+  DROPBOX_PROJECT ProjectKind = "site"
+)
+
+func (pk *PKClient) CreateProject(kind ProjectKind) (*CreateProjectResponse, error) {
+  resp, err := pk.postForm("projects", url.Values{"kind": {string(kind)}})
   if err != nil {
     return nil, err
   }
@@ -33,9 +41,11 @@ func (pk *PKClient) CreateProject() (*CreateProjectResponse, error) {
 
 type ListProjectsResponse struct {
   Projects []struct {
-    Name       string `json:"name"`
-    PancakeURL string `json:"pancake_url"`
-    RepoName   string `json:"repo_name"`
+    Name       string      `json:"name"`
+    Kind       ProjectKind `json:"kind"`
+    Subdomain  string      `json:"subdomain"`
+    PancakeURL string      `json:"pancake_url"`
+    RepoName   string      `json:"repo_name"`
   } `json:"projects"`
 }
 

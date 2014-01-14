@@ -1,85 +1,40 @@
 package main
 
 import (
-  "code.google.com/p/go.crypto/ssh"
   "code.google.com/p/goauth2/oauth"
   "flag"
   "fmt"
   "net/http"
   "net/url"
   "pk/api"
-  "strings"
 )
 
-var commands = map[string]func() error{
-  "add-key": func() error {
-    s, _ := findSSHKeys()
-    key, _, _, _, ok := ssh.ParseAuthorizedKey(s)
-    if !ok {
-      return fmt.Errorf("refusing to upload")
-    }
+type cmd struct {
+  name  string
+  run   func() error
+  usage func() string
+  flags *flag.FlagSet
+}
 
-    keyStr := string(ssh.MarshalAuthorizedKey(key))
-    err := client.UploadKey("myfirstkey", strings.TrimSpace(keyStr))
-    return err
+var commands = []*cmd{
+  cmdKeyAdd,
+  cmdKeyRemove,
+  cmdKeysList,
 
-  },
-  "list-keys": func() error {
-    resp, err := client.ListKeys()
-    if err != nil {
-      return err
-    }
-
-    for _, key := range resp.Keys {
-      fmt.Printf("%-20s  %s  %s\n", key.Name, key.Fingerprint, key.Preview)
-    }
-
-    return nil
-  },
-  "remove-key": func() error {
-    resp, err := client.ListKeys()
-    if err != nil {
-      return err
-    }
-
-    // choose key to remove
-    return nil
-  },
-  "create-project": func() error {
-    resp, err := client.CreateProject()
-    if err != nil {
-      return err
-    }
-    fmt.Printf("Created new project %s.\n", resp.Name)
-    return nil
-  },
-  "list-projects": func() error {
-    resp, err := client.ListProjects()
-    if err != nil {
-      return err
-    }
-
-    for _, key := range resp.Projects {
-      fmt.Printf("%-28s  %s  %s.git\n", key.Name, key.PancakeURL, key.RepoName)
-    }
-
-    return nil
-  },
-  "delete-project": func() error {
-    return nil
-  },
+  cmdProjectCreate,
+  cmdProjectsList,
+  cmdProjectDelete,
 }
 
 var client *api.PKClient
 
 func main() {
-
   var w = flag.Bool("w", false, "prints list of commands")
 
   flag.Usage = func() {
     fmt.Println("Commands: ")
-    for commandName, _ := range commands {
-      fmt.Println(commandName)
+    for _, c := range commands {
+      fmt.Println(c.name)
     }
     fmt.Println()
     flag.PrintDefaults()
@@ -87,8 +42,8 @@ func main() {
 
   flag.Parse()
   if *w {
-    for commandName, _ := range commands {
-      fmt.Printf("%s ", commandName)
+    for _, c := range commands {
+      fmt.Printf("%s ", c.name)
     }
     fmt.Println()
     return
@@ -103,16 +58,44 @@ func main() {
     return
   }
 
-  command, ok := commands[flag.Arg(0)]
-  if !ok {
+  if flag.Arg(0) == "help" {
+    command := findCommand(flag.Arg(1))
+    if command == nil {
+      flag.PrintDefaults()
+      return
+    }
+
+    if command.flags == nil {
+      fmt.Println("No usage for", command.name)
+    } else {
+      command.flags.PrintDefaults()
+    }
+
+    return
+  }
+
+  command := findCommand(flag.Arg(0))
+  if command == nil {
     flag.PrintDefaults()
     return
   }
 
-  err = tryWithReauth(command)
+  if command.flags != nil {
+    command.flags.Parse(flag.Args()[1:])
+  }
+  err = tryWithReauth(command.run)
   if err != nil {
     fmt.Printf("%s error: %s\n", flag.Arg(0), err)
   }
+}
+
+func findCommand(name string) *cmd {
+  for _, c := range commands {
+    if c.name == name {
+      return c
+    }
+  }
+  return nil
 }
 
 func authorize(force bool) {
