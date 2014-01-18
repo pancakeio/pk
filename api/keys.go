@@ -46,9 +46,12 @@ func (pk *PKClient) ListKeys() (*ListKeysResponse, error) {
   if err != nil {
     return nil, err
   }
+  if resp.StatusCode != http.StatusOK {
+    return nil, &APIError{resp.StatusCode, string(r)}
+  }
 
   out := new(ListKeysResponse)
-  json.Unmarshal([]byte(r), out)
+  json.Unmarshal(r, out)
   return out, nil
 }
 
