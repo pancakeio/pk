@@ -1,0 +1,14 @@
+packages:
+  code.google.com/p/go.crypto/ssh:
+    import: ""
+    ref: ebfe91cdc034
+  code.google.com/p/goauth2/oauth:
+    import: ""
+    ref: e062946df3f2
+  pk/api:
+    import: ""
+    ref: '''c706a6f'''
+    deps:
+      code.google.com/p/goauth2/oauth:
+        import: ""
+        ref: e062946df3f2

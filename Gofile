@@ -1,0 +1,7 @@
+packages:
+- import: code.google.com/p/go.crypto/ssh
+  ref: ebfe91cdc034
+- import: code.google.com/p/goauth2/oauth
+  ref: e062946df3f2
+- import: pk/api
+  ref: '''c706a6f'''
