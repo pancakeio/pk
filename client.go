@@ -32,12 +32,16 @@ func main() {
   var w = flag.Bool("w", false, "prints list of commands")
 
   flag.Usage = func() {
-    fmt.Println("Commands: ")
+    fmt.Println("Usage: pk <command> [options] \n")
+
+    fmt.Println("Commands: \n")
     for _, c := range commands {
-      fmt.Println(c.name)
+      fmt.Printf("  %16s  %s\n", c.name, c.usage())
     }
     fmt.Println()
-    flag.PrintDefaults()
+    fmt.Println("Run 'pk help [command]' for more information.")
+    fmt.Println()
+    // flag.PrintDefaults()
   }
 
   flag.Parse()
@@ -129,20 +133,25 @@ func authorize(force bool) {
 
 func tryWithReauth(f func() error) error {
   err := f()
+  needsReauth := false
   switch err.(type) {
   case *url.Error:
     switch err.(*url.Error).Err.(type) {
     case oauth.OAuthError:
       fmt.Println("Access token has expired; please log in again.")
-      authorize(true)
-      return f()
+      needsReauth = true
     }
   case *api.APIError:
     if err.(*api.APIError).Code == http.StatusUnauthorized {
       fmt.Println("Bad access token; please log in again.")
-      authorize(true)
-      return f()
+      needsReauth = true
     }
   }
+
+  if needsReauth {
+    authorize(true)
+    return f()
+  }
+
   return err
 }

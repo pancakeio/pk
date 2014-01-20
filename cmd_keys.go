@@ -22,6 +22,9 @@ var cmdKeyAdd = &cmd{
     return err
   },
   flags: flag.NewFlagSet("add-key", flag.ExitOnError),
+  usage: func() string {
+    return "add an ssh key to your account"
+  },
 }
 
 func init() {
@@ -41,6 +44,9 @@ var cmdKeysList = &cmd{
     }
 
     return nil
+  },
+  usage: func() string {
+    return "list added ssh keys"
   },
 }
 
@@ -68,8 +74,9 @@ var cmdKeyRemove = &cmd{
     }
 
     fmt.Println("Removed key", chosenKey.Preview)
-
-    // choose key to remove
     return nil
+  },
+  usage: func() string {
+    return "diassocate an ssh key"
   },
 }

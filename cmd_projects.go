@@ -24,6 +24,9 @@ var cmdProjectCreate = &cmd{
     return nil
   },
   flags: flag.NewFlagSet("create-project", flag.ExitOnError),
+  usage: func() string {
+    return "create new pancake.io project"
+  },
 }
 
 func init() {
@@ -47,6 +50,9 @@ var cmdProjectsList = &cmd{
     }
 
     return nil
+  },
+  usage: func() string {
+    return "list your projects"
   },
 }
 
@@ -86,5 +92,8 @@ var cmdProjectDelete = &cmd{
 
     fmt.Println("Deleted project", p[choice].Name)
     return nil
+  },
+  usage: func() string {
+    return "delete a project"
   },
 }
