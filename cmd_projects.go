@@ -7,13 +7,13 @@ import (
   "pk/api"
 )
 
-var cmdProjectCreateStatic bool
+var cmdProjectCreateDropbox bool
 var cmdProjectCreate = &cmd{
   name: "create-project",
   run: func() error {
-    kind := api.DROPBOX_PROJECT
-    if cmdProjectCreateStatic {
-      kind = api.STATIC_PROJECT
+    kind := api.STATIC_PROJECT
+    if cmdProjectCreateDropbox {
+      kind = api.DROPBOX_PROJECT
     }
 
     resp, err := client.CreateProject(kind)
@@ -30,7 +30,7 @@ var cmdProjectCreate = &cmd{
 }
 
 func init() {
-  cmdProjectCreate.flags.BoolVar(&cmdProjectCreateStatic, "static", false, "creates a static git-based Pancake.io project")
+  cmdProjectCreate.flags.BoolVar(&cmdProjectCreateDropbox, "dropbox", false, "creates a classic dropbox git-based Pancake.io project")
 }
 
 var cmdProjectsList = &cmd{
