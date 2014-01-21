@@ -21,6 +21,14 @@ var cmdProjectCreate = &cmd{
       return err
     }
     fmt.Printf("Created new project %s.\n", resp.Name)
+    fmt.Println("Run the following in your project repo to get started:")
+    fmt.Println()
+    fmt.Printf("  git remote add pk git@build.pancake.io:%s.git\n", resp.Name)
+    fmt.Println()
+    fmt.Println("To deploy:")
+    fmt.Println()
+    fmt.Println("  git push pk master")
+    fmt.Println()
     return nil
   },
   flags: flag.NewFlagSet("create-project", flag.ExitOnError),
