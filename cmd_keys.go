@@ -18,19 +18,26 @@ func init() {
 var cmdKeyAdd = &cmd{
   name: "add-key",
   run: func() (err error) {
+    existingKeyFingerprints := make(map[string]bool)
+    listKeyResp, listKeyErr := client.ListKeys()
+    if listKeyErr == nil {
+      for _, key := range listKeyResp.Keys {
+        existingKeyFingerprints[key.Fingerprint] = true
+      }
+    }
+
     var key ssh.PublicKey
     if argSSHPubKeyPath != "" {
       key, _, err = sshReadPubKey(argSSHPubKeyPath)
     } else {
-      keys := getSSHKeys()
-      keys = make(map[string]string)
-      if len(keys) == 0 && shouldContinue("No SSH keys found. Create a new key?") {
+      keys := getSSHKeys(existingKeyFingerprints)
+      if len(keys) == 0 && shouldContinue("No SSH keys to add. Create a new key?") {
         createSSHKey()
-        keys = getSSHKeys()
+        keys = getSSHKeys(existingKeyFingerprints)
       }
 
       if len(keys) == 0 {
-        return fmt.Errorf("No SSH keys found.")
+        return fmt.Errorf("No SSH keys to add.")
       }
 
       key, err = pickSSHKey(keys, os.Stdout)

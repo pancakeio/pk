@@ -29,10 +29,12 @@ func (e errPrivKey) Error() string {
 }
 
 // Return SSH key md5 fingerprint
-func fingerprint(k ssh.PublicKey) []byte {
+func fingerprint(k ssh.PublicKey) string {
   w := md5.New()
   w.Write(ssh.MarshalPublicKey(k))
-  return w.Sum(nil)
+  fp := strings.TrimSpace(fmt.Sprintf("% x", w.Sum(nil)))
+  fp = strings.Replace(fp, " ", ":", -1)
+  return fp
 }
 
 // Read SSH public key bytes from path
@@ -60,7 +62,7 @@ func sshReadPubKey(path string) (ssh.PublicKey, string, error) {
 }
 
 // Find SSH keys on the local file system
-func getSSHKeys() map[string]string {
+func getSSHKeys(existingKeyFingerprints map[string]bool) map[string]string {
   candidateKeys := make(map[string]string)
 
   // get key from id_rsa.pub
@@ -84,6 +86,14 @@ func getSSHKeys() map[string]string {
       if ok {
         candidateKeys[string(ssh.MarshalPublicKey(key))] = comment
       }
+    }
+  }
+
+  for k, _ := range candidateKeys {
+    pubKey, _, _ := ssh.ParsePublicKey([]byte(k))
+    fp := fingerprint(pubKey)
+    if _, ok := existingKeyFingerprints[fp]; ok {
+      delete(candidateKeys, k)
     }
   }
 
