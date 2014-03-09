@@ -1,8 +1,11 @@
 package main
 
 import (
+  "bufio"
   "errors"
   "fmt"
+  "os"
+  "strings"
 )
 
 func pick(thing string, max int) (choice int, err error) {
@@ -30,4 +33,11 @@ func shouldContinue(prompt string) bool {
   var yn string
   fmt.Scanf("%s", &yn)
   return yn == "y"
+}
+
+func getText(prompt string) string {
+  fmt.Printf("%s: ", prompt)
+  scanner := bufio.NewScanner(os.Stdin)
+  scanner.Scan()
+  return strings.TrimSpace(scanner.Text())
 }

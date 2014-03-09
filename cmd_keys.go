@@ -5,6 +5,7 @@ import (
   "fmt"
   "os"
   "strings"
+  "time"
 
   "code.google.com/p/go.crypto/ssh"
 )
@@ -47,8 +48,20 @@ var cmdKeyAdd = &cmd{
       return fmt.Errorf("refusing to upload: %s", err)
     }
 
+    var keyName string
+    keyName = getText("Name this key [optional]")
+    if keyName == "" {
+      keyName = time.Now().Format("2006-01-02")
+    }
+
     keyStr := string(ssh.MarshalAuthorizedKey(key))
-    return client.UploadKey("myfirstkey", strings.TrimSpace(keyStr))
+    err = client.UploadKey(keyName, strings.TrimSpace(keyStr))
+    if err != nil {
+      return err
+    }
+
+    fmt.Printf("Added key '%s'.\n", keyName)
+    return nil
   },
   flags: flag.NewFlagSet("add-key", flag.ExitOnError),
   usage: func() string {
