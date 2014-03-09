@@ -8,6 +8,12 @@ import (
   "code.google.com/p/go.crypto/ssh"
 )
 
+var argSSHPubKeyPath string
+
+func init() {
+  cmdKeyAdd.flags.StringVar(&argSSHPubKeyPath, "key-path", "", "path to an ssh-key to upload")
+}
+
 var cmdKeyAdd = &cmd{
   name: "add-key",
   run: func() error {
@@ -25,10 +31,6 @@ var cmdKeyAdd = &cmd{
   usage: func() string {
     return "add an ssh key to your account"
   },
-}
-
-func init() {
-  cmdKeyAdd.flags.StringVar(&sshPubKeyPath, "key-path", "", "path to an ssh-key to upload")
 }
 
 var cmdKeysList = &cmd{

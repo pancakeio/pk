@@ -14,36 +14,61 @@ import (
   "code.google.com/p/go.crypto/ssh"
 )
 
-var sshPubKeyPath string
+var errNotKey = errors.New("not a key")
 
-func upload(k ssh.PublicKey) {
-  keyStr := string(ssh.MarshalAuthorizedKey(k))
-  fmt.Println(strings.TrimSpace(keyStr))
+type errPrivKey string
+
+func (e errPrivKey) Error() string {
+  return "appears to be a private key: " + string(e)
 }
 
+// Return SSH key md5 fingerprint
 func fingerprint(k ssh.PublicKey) []byte {
   w := md5.New()
   w.Write(ssh.MarshalPublicKey(k))
   return w.Sum(nil)
 }
 
+// Read SSH public key bytes from path
+func sshReadPubKey(path string) (ssh.PublicKey, string, error) {
+  f, err := os.Open(filepath.FromSlash(path))
+  if err != nil {
+    return nil, "", err
+  }
+
+  keyBytes, err := ioutil.ReadAll(f)
+  if err != nil {
+    return nil, "", err
+  }
+
+  if bytes.Contains(keyBytes, []byte("PRIVATE")) {
+    return nil, "", errPrivKey(path)
+  }
+
+  key, comment, _, _, ok := ssh.ParseAuthorizedKey(keyBytes)
+  if !ok {
+    return nil, "", errNotKey
+  }
+
+  return key, comment, nil
+}
+
+// Find SSH keys on the local file system
 func findSSHKeys() ([]byte, error) {
-  if sshPubKeyPath != "" {
-    return sshReadPubKey(sshPubKeyPath)
+  if argSSHPubKeyPath != "" {
+    key, _, err := sshReadPubKey(argSSHPubKeyPath)
+    return ssh.MarshalPublicKey(key), err
   }
 
   candidateKeys := make(map[string]string)
 
-  // key from id_rsa.pub
-  keyBytes, err := sshReadPubKey(filepath.Join(homePath(), ".ssh", "id_rsa.pub"))
+  // get key from id_rsa.pub
+  key, comment, err := sshReadPubKey(filepath.Join(homePath(), ".ssh", "id_rsa.pub"))
   if err == nil {
-    key, comment, _, _, ok := ssh.ParseAuthorizedKey(keyBytes)
-    if ok {
-      candidateKeys[string(ssh.MarshalPublicKey(key))] = comment
-    }
+    candidateKeys[string(ssh.MarshalPublicKey(key))] = comment
   }
 
-  // keys from ssh-add
+  // get keys from ssh-add
   out, err := exec.Command("ssh-add", "-L").Output()
   sshAddKeys := strings.TrimSpace(string(out))
   if err == nil && sshAddKeys != "" {
@@ -55,8 +80,7 @@ func findSSHKeys() ([]byte, error) {
     }
   }
 
-  numCandidateKeys := len(candidateKeys)
-  if numCandidateKeys == 0 {
+  if len(candidateKeys) == 0 {
     return nil, errors.New("No ssh keys found.")
   }
 
@@ -71,34 +95,10 @@ func findSSHKeys() ([]byte, error) {
     i += 1
   }
 
-  choice, err := pick("key", numCandidateKeys)
+  choice, err := pick("key", len(candidateKeys))
   if err != nil {
     return nil, err
   }
 
   return ssh.MarshalAuthorizedKey(keyLst[choice]), nil
-}
-
-func sshReadPubKey(s string) ([]byte, error) {
-  f, err := os.Open(filepath.FromSlash(s))
-  if err != nil {
-    return nil, err
-  }
-
-  key, err := ioutil.ReadAll(f)
-  if err != nil {
-    return nil, err
-  }
-
-  if bytes.Contains(key, []byte("PRIVATE")) {
-    return nil, privKeyError(s)
-  }
-
-  return key, nil
-}
-
-type privKeyError string
-
-func (e privKeyError) Error() string {
-  return "appears to be a private key: " + string(e)
 }
