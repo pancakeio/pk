@@ -7,12 +7,12 @@ import (
   "pk/api"
 )
 
-var cmdProjectCreateDropbox bool
+var argProjectCreateDropbox bool
 var cmdProjectCreate = &cmd{
   name: "create-project",
   run: func() error {
     kind := api.STATIC_PROJECT
-    if cmdProjectCreateDropbox {
+    if argProjectCreateDropbox {
       kind = api.DROPBOX_PROJECT
     }
 
@@ -20,7 +20,7 @@ var cmdProjectCreate = &cmd{
     if err != nil {
       return err
     }
-    fmt.Printf("Created new project %s.\n", resp.Name)
+    fmt.Printf("Created new project %s.\n", white(resp.Name))
     fmt.Println("Run the following in your project repo to get started:")
     fmt.Println()
     fmt.Printf("  git remote add pk git@build.pancake.io:%s.git\n", resp.Name)
@@ -38,7 +38,7 @@ var cmdProjectCreate = &cmd{
 }
 
 func init() {
-  cmdProjectCreate.flags.BoolVar(&cmdProjectCreateDropbox, "dropbox", false, "creates a classic dropbox git-based Pancake.io project")
+  cmdProjectCreate.flags.BoolVar(&argProjectCreateDropbox, "dropbox", false, "creates a classic dropbox git-based Pancake.io project")
 }
 
 var cmdProjectsList = &cmd{
