@@ -1,15 +1,17 @@
 # pk
 
-`pk` is a command-line tool for interacting with the Pancake.io API.
+`pk` is a command-line tool for interacting with Pancake.
 
 ## Usage
 
 ```sh
+pk login
+
 pk add-key [-key-path <path to ssh key>]
 pk list-keys
 pk remove-key
 
-pk create-project [-static <make project static>]
+pk create-project [ -dropbox=true (default: false) ]
 pk list-projects
 pk delete-project
 

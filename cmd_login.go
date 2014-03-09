@@ -39,6 +39,6 @@ var cmdLogin = &cmd{
     return nil
   },
   usage: func() string {
-    return "log in to pancake.io"
+    return "log in to pancake"
   },
 }

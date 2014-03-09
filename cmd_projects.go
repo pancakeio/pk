@@ -38,7 +38,7 @@ var cmdProjectCreate = &cmd{
 }
 
 func init() {
-  cmdProjectCreate.flags.BoolVar(&argProjectCreateDropbox, "dropbox", false, "creates a classic dropbox git-based Pancake.io project")
+  cmdProjectCreate.flags.BoolVar(&argProjectCreateDropbox, "dropbox", false, "creates a classic dropbox-based Pancake project (default: git-based project)")
 }
 
 var cmdProjectsList = &cmd{
