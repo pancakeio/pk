@@ -24,3 +24,10 @@ func pick(thing string, max int) (choice int, err error) {
   choice -= 1
   return
 }
+
+func shouldContinue(prompt string) bool {
+  fmt.Printf("%s [yN] ", prompt)
+  var yn string
+  fmt.Scanf("%s", &yn)
+  return yn == "y"
+}
