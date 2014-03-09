@@ -10,6 +10,7 @@ import (
 )
 
 type PKConfig struct {
+  User        string    "json:`user`"
   URL         string    "json:`api_url`"
   AccessToken string    "json:`access_token`"
   Expiration  time.Time "json:`token_expiraion`"
@@ -33,7 +34,7 @@ func (p *PKConfig) saveRc() error {
     return err
   }
 
-  return ioutil.WriteFile(rcPath(), rcBytes, os.ModePerm)
+  return ioutil.WriteFile(rcPath(), rcBytes, os.FileMode(0644))
 }
 
 func rcPath() string {

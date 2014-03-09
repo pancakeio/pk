@@ -1,12 +1,13 @@
 package main
 
 import (
-  "code.google.com/p/goauth2/oauth"
   "flag"
   "fmt"
   "net/http"
   "net/url"
   "pk/api"
+
+  "code.google.com/p/goauth2/oauth"
 )
 
 type cmd struct {
@@ -17,6 +18,8 @@ type cmd struct {
 }
 
 var commands = []*cmd{
+  cmdLogin,
+
   cmdKeyAdd,
   cmdKeyRemove,
   cmdKeysList,
@@ -100,35 +103,6 @@ func findCommand(name string) *cmd {
     }
   }
   return nil
-}
-
-func authorize(force bool) {
-  conf, err := getRc()
-  client, err = api.NewPKClient(conf.URL)
-
-  if force || err != nil {
-    var username, password string
-    fmt.Printf("Username: ")
-    fmt.Scanln(&username)
-    fmt.Printf("Password: ")
-    fmt.Scanln(&password)                      // ugh shows password
-    err = client.Authorize(username, password) // should return json on unauthorized
-    if err != nil {
-      fmt.Println("Authorization error:", err)
-      return
-    }
-
-    conf.AccessToken = client.AccessToken
-    conf.Expiration = client.TokenExpiration
-
-    if err := conf.saveRc(); err != nil {
-      panic(err)
-    }
-  } else {
-    client.AccessToken = conf.AccessToken
-    client.TokenExpiration = conf.Expiration
-  }
-  return
 }
 
 func tryWithReauth(f func() error) error {
