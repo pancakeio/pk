@@ -3,6 +3,7 @@ package main
 import (
   "flag"
   "fmt"
+  "os"
   "strings"
 
   "code.google.com/p/go.crypto/ssh"
@@ -16,16 +17,31 @@ func init() {
 
 var cmdKeyAdd = &cmd{
   name: "add-key",
-  run: func() error {
-    s, _ := findSSHKeys()
-    key, _, _, _, ok := ssh.ParseAuthorizedKey(s)
-    if !ok {
-      return fmt.Errorf("refusing to upload")
+  run: func() (err error) {
+    var key ssh.PublicKey
+    if argSSHPubKeyPath != "" {
+      key, _, err = sshReadPubKey(argSSHPubKeyPath)
+    } else {
+      keys := getSSHKeys()
+      keys = make(map[string]string)
+      if len(keys) == 0 && shouldContinue("No SSH keys found. Create a new key?") {
+        createSSHKey()
+        keys = getSSHKeys()
+      }
+
+      if len(keys) == 0 {
+        return fmt.Errorf("No SSH keys found.")
+      }
+
+      key, err = pickSSHKey(keys, os.Stdout)
+    }
+
+    if err != nil {
+      return fmt.Errorf("refusing to upload: %s", err)
     }
 
     keyStr := string(ssh.MarshalAuthorizedKey(key))
-    err := client.UploadKey("myfirstkey", strings.TrimSpace(keyStr))
-    return err
+    return client.UploadKey("myfirstkey", strings.TrimSpace(keyStr))
   },
   flags: flag.NewFlagSet("add-key", flag.ExitOnError),
   usage: func() string {

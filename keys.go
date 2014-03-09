@@ -5,6 +5,7 @@ import (
   "crypto/md5"
   "errors"
   "fmt"
+  "io"
   "io/ioutil"
   "os"
   "os/exec"
@@ -12,6 +13,11 @@ import (
   "strings"
 
   "code.google.com/p/go.crypto/ssh"
+)
+
+var (
+  idRsaPubPath = filepath.Join(homePath(), ".ssh", "id_rsa.pub")
+  idDsaPubPath = filepath.Join(homePath(), ".ssh", "id_dsa.pub")
 )
 
 var errNotKey = errors.New("not a key")
@@ -54,18 +60,19 @@ func sshReadPubKey(path string) (ssh.PublicKey, string, error) {
 }
 
 // Find SSH keys on the local file system
-func findSSHKeys() ([]byte, error) {
-  if argSSHPubKeyPath != "" {
-    key, _, err := sshReadPubKey(argSSHPubKeyPath)
-    return ssh.MarshalPublicKey(key), err
-  }
-
+func getSSHKeys() map[string]string {
   candidateKeys := make(map[string]string)
 
   // get key from id_rsa.pub
-  key, comment, err := sshReadPubKey(filepath.Join(homePath(), ".ssh", "id_rsa.pub"))
-  if err == nil {
-    candidateKeys[string(ssh.MarshalPublicKey(key))] = comment
+  rsaKey, rsaComment, rsaErr := sshReadPubKey(idRsaPubPath)
+  if rsaErr == nil {
+    candidateKeys[string(ssh.MarshalPublicKey(rsaKey))] = rsaComment
+  }
+
+  // get key from id_dsa.pub
+  dsaKey, dsaComment, dsaErr := sshReadPubKey(idDsaPubPath)
+  if dsaErr == nil {
+    candidateKeys[string(ssh.MarshalPublicKey(dsaKey))] = dsaComment
   }
 
   // get keys from ssh-add
@@ -80,25 +87,46 @@ func findSSHKeys() ([]byte, error) {
     }
   }
 
-  if len(candidateKeys) == 0 {
-    return nil, errors.New("No ssh keys found.")
-  }
+  return candidateKeys
+}
 
-  i := 1
+func pickSSHKey(candidateKeys map[string]string, w io.Writer) (ssh.PublicKey, error) {
+  i := 0
   keyLst := make([]ssh.PublicKey, len(candidateKeys))
   for key, comment := range candidateKeys {
-    pubKey, _, _ := ssh.ParsePublicKey([]byte(key))
-    keyLst[i-1] = pubKey
+    pubKey, _, ok := ssh.ParsePublicKey([]byte(key))
+    if !ok {
+      continue
+    }
+    keyLst[i] = pubKey
 
     k := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(pubKey)))
-    fmt.Printf("[ %d ] %s...%s %s\n", i, k[0:24], k[len(k)-24:], comment)
+    l := fmt.Sprintf("[ %d ] %s...%s %s\n", i+1, k[0:24], k[len(k)-24:], comment)
+    w.Write([]byte(l))
     i += 1
   }
 
-  choice, err := pick("key", len(candidateKeys))
+  if i == 0 {
+    return nil, errors.New("No ssh keys found.")
+  }
+
+  choice, err := pick("key", i)
   if err != nil {
     return nil, err
   }
 
-  return ssh.MarshalAuthorizedKey(keyLst[choice]), nil
+  return keyLst[choice], nil
+}
+
+func createSSHKey() {
+  cmd := exec.Command(
+    "ssh-keygen",
+    "-t", "rsa",
+    "-f", strings.TrimSuffix(idDsaPubPath, ".pub"),
+    "-C", "created by pancake.io",
+  )
+  cmd.Stdin = os.Stdin
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
+  cmd.Run()
 }
